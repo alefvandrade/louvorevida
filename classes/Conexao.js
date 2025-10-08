@@ -76,8 +76,9 @@ export default class Conexao {
 }
 
 // Teste rápido se rodar diretamente o arquivo
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1].includes("Conexao.js")) {
   (async () => {
+    console.log("🔄 Testando conexão...");
     const conexao = await Conexao.conectar();
     await Conexao.desconectar();
   })();
