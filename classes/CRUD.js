@@ -22,9 +22,28 @@ export default class CRUD {
   setCampos(campos) {
     this.campos = campos;
   }
+  
+  async executar(sql, params = []) {
+    await this.init();
+    try {
+      const [rowsOrResult] = await this.conexao.execute(sql, params);
 
-  /** CREATE — Inserir novo registro */
-  async create(dados) {
+      // Para SELECT o mysql2/promise retorna array de objetos (rows)
+      // Para INSERT/UPDATE/DELETE retorna um ResultObject — detectamos pelo tipo
+      // Se for array -> SELECT -> retorna array
+      if (Array.isArray(rowsOrResult)) {
+        return rowsOrResult;
+      }
+
+      // Caso contrário, é o objeto de resultado (insertId, affectedRows...)
+      return rowsOrResult;
+    } catch (erro) {
+      throw new Error(`Erro ao executar SQL em ${this.tabela}: ${erro.message}`);
+    }
+}
+
+/** CREATE — Inserir novo registro */
+async create(dados) {
     await this.init();
     try {
       const camposFiltrados = Object.keys(dados)
