@@ -187,27 +187,7 @@ logo	VARCHAR(255)	Caminho do logo
 cor_principal	VARCHAR(7)	Ex: #1d4ed8
 cor_secundaria	VARCHAR(7)	Ex: #ffffff
 7. Estrutura de Pastas
-📂 louvorevida/
-├── 📁 classes/
-│   ├── Admin.js
-│   ├── Cabecalho.js
-│   ├── Videos.js
-│   ├── Musicas.js
-│   └── Conexao.js
-├── 📁 dashboard/
-│   ├── _header.html
-│   ├── _footer.html
-│   ├── edit_admin.html
-│   ├── videos.html
-│   ├── musicas.html
-│   └── index.html
-├── 📁 public/
-│   ├── css/
-│   ├── js/
-│   └── img/
-├── server.js
-├── package.json
-└── README.md
+(veja no git hub )
 
 8. Instruções de Execução
 🔧 Instalar dependências
