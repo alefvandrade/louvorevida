@@ -1,137 +1,155 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-     <meta charset="UTF-8" />
-     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-     <title>Editar Administrador</title>
-     <style>
-          .container {
-               max-width: 500px;
-               margin: 40px auto;
-               background: #fff;
-               padding: 30px;
-               border-radius: 12px;
-               box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-          }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editar Administrador</title>
 
-          h2 {
-               text-align: center;
-               color: #333;
-               margin-bottom: 20px;
-          }
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-          .form-padrao label {
-               display: block;
-               margin-top: 15px;
-               font-weight: bold;
-          }
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: "Segoe UI", sans-serif;
+    }
 
-          .form-padrao input {
-               width: 100%;
-               padding: 10px;
-               margin-top: 5px;
-               border: 1px solid #ccc;
-               border-radius: 8px;
-          }
+    .card {
+      max-width: 500px;
+      margin: 80px auto;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      padding: 25px;
+      background: white;
+    }
 
-          .btn-salvar {
-               display: block;
-               width: 100%;
-               margin-top: 20px;
-               background-color: #2c6e49;
-               color: white;
-               border: none;
-               padding: 12px;
-               border-radius: 8px;
-               cursor: pointer;
-               font-weight: bold;
-          }
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+    }
 
-          .btn-salvar:hover {
-               background-color: #255a3d;
-          }
-     </style>
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
 
-     <script type="module">
-          import Admin from "../classes/Admin.js";
+    #msgRetorno {
+      font-weight: 500;
+      text-align: center;
+    }
 
-          document.addEventListener("DOMContentLoaded", async () => {
-               await carregarHeaderFooter();
-
-               const admin = new Admin();
-               await admin.init();
-
-               const idAdmin = globalThis.sessaoAdmin?.id;
-               if (!idAdmin) {
-                    alert("Sessão expirada. Faça login novamente.");
-                    window.location.href = "../index.html";
-                    return;
-               }
-
-               const carregado = await admin.carregarPorId(idAdmin);
-               if (!carregado) {
-                    alert("Erro ao carregar dados do administrador.");
-                    return;
-               }
-
-               document.getElementById("usuario").value = admin.usuario;
-
-               document.getElementById("formAdmin").addEventListener("submit", async (e) => {
-                    e.preventDefault();
-
-                    const usuario = document.getElementById("usuario").value.trim();
-                    const senha = document.getElementById("senha").value.trim();
-
-                    if (!usuario) {
-                         alert("Informe o nome de usuário.");
-                         return;
-                    }
-
-                    try {
-                         admin.usuario = usuario;
-                         if (senha) await admin.setSenha(senha);
-
-                         const sucesso = await admin.atualizar();
-                         if (sucesso) {
-                              alert("Dados do administrador atualizados com sucesso!");
-                              window.location.href = "painel.html";
-                         } else {
-                              alert("Nenhuma alteração foi feita.");
-                         }
-                    } catch (error) {
-                         console.error(error);
-                         alert("Erro ao atualizar os dados do administrador.");
-                    }
-               });
-          });
-
-          async function carregarHeaderFooter() {
-               const headerHTML = await fetch("./_header.html").then((r) => r.text());
-               const footerHTML = await fetch("./_footer.html").then((r) => r.text());
-               document.getElementById("header").innerHTML = headerHTML;
-               document.getElementById("footer").innerHTML = footerHTML;
-          }
-     </script>
+    footer {
+      text-align: center;
+      margin-top: 80px;
+      color: #777;
+      font-size: 0.9rem;
+      padding: 15px;
+    }
+  </style>
 </head>
 
 <body>
-     <div id="header"></div>
+  <!-- Header -->
+  <div id="header"></div>
 
-     <main class="container">
-          <h2>Editar Administrador</h2>
-          <form id="formAdmin" class="form-padrao">
-               <label for="usuario">Usuário:</label>
-               <input type="text" id="usuario" name="usuario" required />
+  <!-- Conteúdo principal -->
+  <div class="container">
+    <div class="card">
+      <h3 class="text-center mb-4">Editar Administrador</h3>
 
-               <label for="senha">Nova Senha:</label>
-               <input type="password" id="senha" name="senha" placeholder="Deixe em branco para manter a atual" />
+      <form id="formEditAdmin">
+        <div class="mb-3">
+          <label class="form-label">Usuário</label>
+          <input type="text" id="usuario" class="form-control" required />
+        </div>
 
-               <button type="submit" class="btn-salvar">Salvar Alterações</button>
-          </form>
-     </main>
+        <div class="mb-3">
+          <label class="form-label">Nova Senha (opcional)</label>
+          <input type="password" id="senha" class="form-control" placeholder="Deixe em branco para manter a atual" />
+        </div>
 
-     <div id="footer"></div>
+        <button type="submit" class="btn btn-primary w-100">Salvar Alterações</button>
+      </form>
+
+      <div id="msgRetorno" class="mt-3"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div id="footer"></div>
+
+  <!-- Bootstrap -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Script principal -->
+  <script type="module">
+    import Admin from "../classes/Admin.js";
+    import Conexao from "../classes/Conexao.js";
+
+    // Carrega header e footer
+    async function carregarHeaderFooter() {
+      try {
+        const headerResp = await fetch("../dashboard/_header.html");
+        document.getElementById("header").innerHTML = await headerResp.text();
+
+        const footerResp = await fetch("../dashboard/_footer.html");
+        document.getElementById("footer").innerHTML = await footerResp.text();
+      } catch (e) {
+        console.error("Erro ao carregar header/footer:", e);
+      }
+    }
+
+    // Carrega os dados atuais do admin
+    async function carregarAdmin() {
+      try {
+        const admin = new Admin();
+        await admin.init();
+        await admin.carregarPorId(1);
+
+        document.getElementById("usuario").value = admin.usuario;
+      } catch (e) {
+        console.error("Erro ao carregar admin:", e);
+        document.getElementById("msgRetorno").textContent = "Erro ao carregar dados.";
+        document.getElementById("msgRetorno").className = "text-danger text-center mt-3";
+      }
+    }
+
+    // Atualiza o admin no banco
+    async function atualizarAdmin(event) {
+      event.preventDefault();
+
+      const usuario = document.getElementById("usuario").value.trim();
+      const senha = document.getElementById("senha").value.trim();
+      const msg = document.getElementById("msgRetorno");
+
+      try {
+        const admin = new Admin();
+        await admin.init();
+        await admin.carregarPorId(1);
+        admin.usuario = usuario;
+
+        if (senha) await admin.setSenha(senha);
+
+        const ok = await admin.atualizar();
+
+        if (ok) {
+          msg.textContent = "✅ Administrador atualizado com sucesso!";
+          msg.className = "text-success text-center mt-3";
+          document.getElementById("senha").value = "";
+        } else {
+          msg.textContent = "⚠️ Nenhuma alteração realizada.";
+          msg.className = "text-warning text-center mt-3";
+        }
+      } catch (e) {
+        console.error("Erro ao atualizar admin:", e);
+        msg.textContent = "❌ Erro ao salvar alterações.";
+        msg.className = "text-danger text-center mt-3";
+      }
+    }
+
+    document.getElementById("formEditAdmin").addEventListener("submit", atualizarAdmin);
+
+    await carregarHeaderFooter();
+    await carregarAdmin();
+  </script>
 </body>
-
 </html>
