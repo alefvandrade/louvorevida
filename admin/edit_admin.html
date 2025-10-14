@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <title>Editar Administrador</title>
+     <style>
+          .container {
+               max-width: 500px;
+               margin: 40px auto;
+               background: #fff;
+               padding: 30px;
+               border-radius: 12px;
+               box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          }
+
+          h2 {
+               text-align: center;
+               color: #333;
+               margin-bottom: 20px;
+          }
+
+          .form-padrao label {
+               display: block;
+               margin-top: 15px;
+               font-weight: bold;
+          }
+
+          .form-padrao input {
+               width: 100%;
+               padding: 10px;
+               margin-top: 5px;
+               border: 1px solid #ccc;
+               border-radius: 8px;
+          }
+
+          .btn-salvar {
+               display: block;
+               width: 100%;
+               margin-top: 20px;
+               background-color: #2c6e49;
+               color: white;
+               border: none;
+               padding: 12px;
+               border-radius: 8px;
+               cursor: pointer;
+               font-weight: bold;
+          }
+
+          .btn-salvar:hover {
+               background-color: #255a3d;
+          }
+     </style>
+
+     <script type="module">
+          import Admin from "../classes/Admin.js";
+
+          document.addEventListener("DOMContentLoaded", async () => {
+               await carregarHeaderFooter();
+
+               const admin = new Admin();
+               await admin.init();
+
+               const idAdmin = globalThis.sessaoAdmin?.id;
+               if (!idAdmin) {
+                    alert("Sessão expirada. Faça login novamente.");
+                    window.location.href = "../index.html";
+                    return;
+               }
+
+               const carregado = await admin.carregarPorId(idAdmin);
+               if (!carregado) {
+                    alert("Erro ao carregar dados do administrador.");
+                    return;
+               }
+
+               document.getElementById("usuario").value = admin.usuario;
+
+               document.getElementById("formAdmin").addEventListener("submit", async (e) => {
+                    e.preventDefault();
+
+                    const usuario = document.getElementById("usuario").value.trim();
+                    const senha = document.getElementById("senha").value.trim();
+
+                    if (!usuario) {
+                         alert("Informe o nome de usuário.");
+                         return;
+                    }
+
+                    try {
+                         admin.usuario = usuario;
+                         if (senha) await admin.setSenha(senha);
+
+                         const sucesso = await admin.atualizar();
+                         if (sucesso) {
+                              alert("Dados do administrador atualizados com sucesso!");
+                              window.location.href = "painel.html";
+                         } else {
+                              alert("Nenhuma alteração foi feita.");
+                         }
+                    } catch (error) {
+                         console.error(error);
+                         alert("Erro ao atualizar os dados do administrador.");
+                    }
+               });
+          });
+
+          async function carregarHeaderFooter() {
+               const headerHTML = await fetch("./_header.html").then((r) => r.text());
+               const footerHTML = await fetch("./_footer.html").then((r) => r.text());
+               document.getElementById("header").innerHTML = headerHTML;
+               document.getElementById("footer").innerHTML = footerHTML;
+          }
+     </script>
+</head>
+
+<body>
+     <div id="header"></div>
+
+     <main class="container">
+          <h2>Editar Administrador</h2>
+          <form id="formAdmin" class="form-padrao">
+               <label for="usuario">Usuário:</label>
+               <input type="text" id="usuario" name="usuario" required />
+
+               <label for="senha">Nova Senha:</label>
+               <input type="password" id="senha" name="senha" placeholder="Deixe em branco para manter a atual" />
+
+               <button type="submit" class="btn-salvar">Salvar Alterações</button>
+          </form>
+     </main>
+
+     <div id="footer"></div>
+</body>
+
+</html>

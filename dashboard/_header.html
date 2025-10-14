@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Louvor e Vida - Painel</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Bootstrap CSS + icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+  <style>
+    :root{
+      --bg: #f8f9fa;
+      --text: #212529;
+      --navbar-bg: #222;
+      --muted: rgba(255,255,255,0.8);
+      --dropdown-bg: #333;
+      --dropdown-text: #fff;
+    }
+    [data-theme="dark"]{
+      --bg: #121212;
+      --text: #e9ecef;
+      --navbar-bg: #0b0b0b;
+      --muted: rgba(255,255,255,0.7);
+      --dropdown-bg: #1f1f1f;
+      --dropdown-text: #fff;
+    }
+    [data-theme="light"]{
+      --bg: #f8f9fa;
+      --text: #212529;
+      --navbar-bg: #222;
+      --muted: rgba(255,255,255,0.9);
+      --dropdown-bg: #333;
+      --dropdown-text: #fff;
+    }
+
+    html,body { background:var(--bg); color:var(--text); transition: .22s ease; }
+
+    .navbar {
+      background-color: var(--navbar-bg) !important;
+    }
+
+    /* brand/title/logo colors */
+    .navbar-brand, .navbar-brand * { color: var(--muted) !important; text-decoration: none; }
+    .navbar-brand img { object-fit: contain; }
+
+    /* nav links */
+    .nav-link { color: var(--muted) !important; }
+    .nav-link:hover { color: #ffc107 !important; }
+
+    /* dropdown menu themed */
+    .dropdown-menu {
+      background-color: var(--dropdown-bg) !important;
+      border: none;
+    }
+    .dropdown-item {
+      color: var(--dropdown-text) !important;
+    }
+    .dropdown-item:hover { background: rgba(255,255,255,0.04) !important; color: #ffc107 !important; }
+
+    /* user name (force white-ish in dark navbar) */
+    .user-dropdown { color: var(--muted) !important; display:flex; align-items:center; gap:.4rem; cursor:pointer; }
+    .user-dropdown span { color: var(--muted) !important; font-weight:500; }
+
+    .theme-toggle { color: var(--muted); cursor:pointer; font-size:1.1rem; margin-left:.5rem; }
+
+    /* small adjustments for mobile and spacing */
+    @media (max-width:575px){
+      .navbar-brand span { font-size:14px; }
+      .nav-link { font-size:14px; }
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid px-3">
+      <!-- logo + title (populated by JS) -->
+      <a class="navbar-brand d-flex align-items-center gap-2" id="brandLink" href="">
+        <img id="brandLogo" src="" alt="Logo" width="36" height="36" onerror="this.style.display='none'">
+        <span id="brandTitle">Louvor e Vida</span>
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="menuPrincipal">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="">Início</a></li>
+
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="videosDropdown" role="button" data-bs-toggle="dropdown">Vídeos</a>
+            <ul class="dropdown-menu" aria-labelledby="videosDropdown">
+              <li><a class="dropdown-item" href="">Cadastrar Vídeo</a></li>
+              <li><a class="dropdown-item" href="">Gerenciar Vídeos</a></li>
+            </ul>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="agendaDropdown" role="button" data-bs-toggle="dropdown">Agenda</a>
+            <ul class="dropdown-menu" aria-labelledby="agendaDropdown">
+              <li><a class="dropdown-item" href="">Cadastrar Evento</a></li>
+              <li><a class="dropdown-item" href="">Gerenciar Agenda</a></li>
+            </ul>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="rodapeDropdown" role="button" data-bs-toggle="dropdown">Rodapé</a>
+            <ul class="dropdown-menu" aria-labelledby="rodapeDropdown">
+              <li><a class="dropdown-item" href="">Cadastrar Item</a></li>
+              <li><a class="dropdown-item" href="">Gerenciar Rodapé</a></li>
+            </ul>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center">
+          <!-- theme toggle -->
+          <i id="toggleTheme" class="bi bi-brightness-high theme-toggle" title="Alternar tema"></i>
+
+          <!-- user dropdown -->
+          <div class="dropdown ms-3">
+            <div class="user-dropdown dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="userToggle">
+              <i class="bi bi-person-circle" style="font-size:1.5rem"></i>
+              <span id="adminName">Administrador</span>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userToggle">
+              <li><a class="dropdown-item" id="linkEditarAdmin" href="../admin/edit_admin.html">Editar Admin</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" id="btnLogout" href="#">Sair do Sistema</a></li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- bootstrap bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script type="module">
+  // recebe dados do backend. Ajuste endpoints conforme seu servidor.
+  const ENDPOINT_CABECALHO = '/api/cabecalho'; // GET => { nome, logo, favicon }
+  const ENDPOINT_ADMIN_ME = '/api/admin/me';   // GET => { id, nome } se logado
+
+  const brandLogo = document.getElementById('brandLogo');
+  const brandTitle = document.getElementById('brandTitle');
+  const adminNameEl = document.getElementById('adminName');
+  const toggleThemeBtn = document.getElementById('toggleTheme');
+  const btnLogout = document.getElementById('btnLogout');
+  const linkEditarAdmin = document.getElementById('linkEditarAdmin');
+
+  // carrega cabeçalho do banco (se der erro, usa fallback)
+  async function carregarCabecalho(){
+    try{
+      const res = await fetch(ENDPOINT_CABECALHO, { cache: 'no-store' });
+      if(!res.ok) throw new Error('sem cabeçalho');
+      const js = await res.json();
+      if(js.logo){
+        brandLogo.src = js.logo; // caminho deve ser acessível publicamente (p.ex. /uploads/logo.png)
+        brandLogo.style.display = '';
+      } else {
+        brandLogo.style.display = 'none';
+      }
+      brandTitle.textContent = js.nome || 'Louvor e Vida';
+      // se quiser setar favicon:
+      if(js.favicon){
+        let link = document.querySelector("link[rel~='icon']");
+        if(!link){
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.head.appendChild(link);
+        }
+        link.href = js.favicon;
+      }
+    }catch(err){
+      // fallback: já precofigurado no HTML
+      console.warn('Não foi possível carregar cabeçalho:', err);
+    }
+  }
+
+  // carrega admin atual (rota /api/admin/me retorna o admin logado)
+  async function carregarAdmin(){
+    try{
+      const res = await fetch(ENDPOINT_ADMIN_ME, { cache: 'no-store' });
+      if(!res.ok){
+        // não logado ou erro: manter "Administrador"
+        adminNameEl.textContent = 'Administrador';
+        // esconder editar se preferir: linkEditarAdmin.style.display = 'none';
+        return;
+      }
+      const data = await res.json();
+      adminNameEl.textContent = data.nome || 'Administrador';
+      // preenche link editar (deixe em branco se quiser preencher depois)
+      // por exemplo colocar: /admin/edit?id=#
+      if(data.id){
+        linkEditarAdmin.href = `#`; // << deixar em branco / personalizar
+        // se preferir redirecionar pra uma rota com id:
+        // linkEditarAdmin.href = `/admin/editar.html?id=${data.id}`;
+      }
+    }catch(err){
+      console.error('Erro ao buscar admin:', err);
+      adminNameEl.textContent = 'Administrador';
+    }
+  }
+
+  // logout simples — sua rota precisa encerrar sessão no servidor
+  btnLogout.addEventListener('click', (e)=>{
+    e.preventDefault();
+    // chame API de logout (opcional), depois redirecione:
+    fetch('/api/logout', { method: 'POST' }).finally(()=>{
+      // limpar local e redirecionar para login
+      localStorage.removeItem('idAdmin');
+      window.location.href = '/login.html';
+    });
+  });
+
+  // THEME: aplica e persiste
+  function applyTheme(theme){
+    document.body.setAttribute('data-theme', theme);
+    toggleThemeBtn.className = theme === 'dark' ? 'bi bi-moon theme-toggle' : 'bi bi-brightness-high theme-toggle';
+    localStorage.setItem('theme', theme);
+  }
+
+  // toggle handler
+  toggleThemeBtn.addEventListener('click', ()=>{
+    const current = document.body.getAttribute('data-theme') || 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  // inicialização
+  (async ()=>{
+    // aplica tema salvo
+    const saved = localStorage.getItem('theme') || 'light';
+    applyTheme(saved);
+
+    await carregarCabecalho();
+    await carregarAdmin();
+  })();
+  </script>
+</body>
+</html>
