@@ -4,8 +4,8 @@
  * Versão compatível com Conexao.class.php (mysqli) e CRUD.class.php
  */
 
-require_once __DIR__ . "/Conexao.class.php";
-require_once __DIR__ . "/CRUD.class.php";
+require_once __DIR__ . "\Conexao.class.php";
+require_once __DIR__ . "\CRUD.class.php";
 
 class Admin extends CRUD {
     private $id = null;
