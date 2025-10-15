@@ -1,64 +1,44 @@
-import express from "express";
-import Admin from "../classes/Admin.js";
+import Admin from "./Admin.js";
 
-const app = express();
-app.use(express.json());
-
-// 🔹 Endpoint para carregar dados atuais do admin
-app.get("/api/admin/dados", async (req, res) => {
-  try {
-    const admin = new Admin();
-    await admin.init();
-
-    const ok = await admin.carregarPorId(1); // id fixo do admin
-    if (!ok) {
-      return res.json({ sucesso: false, mensagem: "Administrador não encontrado." });
+export default class EditarAdmin extends Admin {
+    constructor() {
+        super();
+        this.adminAtual = null;
     }
 
-    res.json({
-      sucesso: true,
-      admin: {
-        id: admin.id,
-        usuario: admin.usuario,
-        criado_em: admin.criado_em,
-        atualizado_em: admin.atualizado_em
-      }
-    });
-  } catch (erro) {
-    console.error("Erro ao buscar admin:", erro);
-    res.status(500).json({ sucesso: false, mensagem: "Erro ao carregar dados do administrador." });
-  }
-});
-
-// 🔹 Endpoint para atualizar o admin
-app.post("/api/admin/atualizar", async (req, res) => {
-  try {
-    const { usuario, senha } = req.body;
-
-    const admin = new Admin();
-    await admin.init();
-    await admin.carregarPorId(1);
-
-    admin.usuario = usuario;
-    if (senha && senha.trim() !== "") {
-      await admin.setSenha(senha);
+    async init() {
+        await super.init();
+        await this.carregarAdmin();
     }
 
-    const atualizado = await admin.atualizar();
+    // Carrega os dados do único admin
+    async carregarAdmin() {
+        try {
+            // Usamos ID fixo, assumindo que só existe um admin
+            const [rows] = await this.conexao.execute(
+                `SELECT * FROM ${this.tabela} LIMIT 1`
+            );
 
-    if (atualizado) {
-      res.json({ sucesso: true, mensagem: "Administrador atualizado com sucesso!" });
-    } else {
-      res.json({ sucesso: false, mensagem: "Nenhuma alteração realizada." });
+            if (rows.length === 0) throw new Error("Nenhum admin encontrado");
+
+            this.adminAtual = rows[0];
+            return this.adminAtual;
+        } catch (error) {
+            console.error("Erro ao carregar admin:", error);
+        }
     }
-  } catch (erro) {
-    console.error("Erro ao atualizar admin:", erro);
-    res.status(500).json({ sucesso: false, mensagem: "Erro ao atualizar administrador." });
-  }
-});
 
-// 🔹 Inicia o servidor (se ainda não estiver rodando)
-const PORT = 3001;
-app.listen(PORT, () => {
-  console.log(`✅ Servidor edit_admin.js rodando na porta ${PORT}`);
-});
+    // Atualiza o admin com dados do formulário
+    async atualizarAdmin(dados) {
+        try {
+            this.id = this.adminAtual.id;
+            this.usuario = dados.usuario;
+            if (dados.senha) await this.setSenha(dados.senha);
+            const sucesso = await this.atualizar();
+            return sucesso;
+        } catch (error) {
+            console.error("Erro ao atualizar admin:", error);
+            return false;
+        }
+    }
+}

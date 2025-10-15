@@ -3,10 +3,6 @@
 -- SISTEMA DE GERENCIAMENTO DO SITE DO VOCAL
 -- ============================================
 
-DROP DATABASE IF EXISTS vocal_vida;
-CREATE DATABASE IF NOT EXISTS vocal_vida CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE vocal_vida;
-
 -- ==================================================
 -- 1. ADMIN
 -- ==================================================
@@ -20,8 +16,7 @@ CREATE TABLE IF NOT EXISTS admin (
 
 -- Insere admin padrão
 INSERT INTO admin (usuario, senha)
-VALUES ('vocal.l0uvor&vida', '$2y$10$e5jUQTBKnxRzGQ9b4m4GweaKXzWQ9H3W7SYj2IuSnv/YT5PAVVZNu'); 
--- senha 251023 (hash via password_hash)
+VALUES ('vocal.l0uvor&vida', '251023'); 
 
 -- ==================================================
 -- 2. INTEGRANTES
