@@ -44,10 +44,10 @@ class Conexao {
             if ($mysqli->connect_errno) {
                 die("❌ Não foi possível conectar a nenhum banco de dados. Erro: " . $mysqli->connect_error);
             } else {
-                echo "✅ Conectado ao banco Infinity ({$cfg['dbname']}) com sucesso!<br>";
+                // echo "✅ Conectado ao banco Infinity ({$cfg['dbname']}) com sucesso!<br>";
             }
         } else {
-            echo "✅ Conectado ao banco local ({$cfg['dbname']}) com sucesso!<br>";
+            // echo "✅ Conectado ao banco local ({$cfg['dbname']}) com sucesso!<br>";
         }
 
         $mysqli->set_charset($cfg['charset']);
