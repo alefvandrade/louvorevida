@@ -1,58 +1,97 @@
 <?php
 /**
  * Admin.class.php
- * Versão compatível com Conexao.class.php (mysqli) e CRUD.class.php
+ * Versão robusta e instrumentada para debug (mysqli)
+ * Herdando CRUD.class.php
+ *
+ * Coloque em: classes/Admin.class.php
+ * Requer: classes/Conexao.class.php e classes/CRUD.class.php
  */
 
-require_once __DIR__ . "\Conexao.class.php";
-require_once __DIR__ . "\CRUD.class.php";
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
 
-class Admin extends CRUD {
+require_once __DIR__ . '/Conexao.class.php';
+require_once __DIR__ . '/CRUD.class.php';
+
+class Admin extends CRUD
+{
     private $id = null;
     private $usuario = null;
     private $senha = null;
     private $criado_em = null;
     private $atualizado_em = null;
 
-    public function __construct() {
-        parent::__construct("admin"); // o CRUD já chama Conexao::conectar() no constructor
-        // garante que $this->conexao está disponível (definido em CRUD)
-        $this->setCampos(["usuario", "senha", "criado_em", "atualizado_em"]);
+    public function __construct()
+    {
+        parent::__construct("admin"); // Define a tabela
+        // Não chamar $this->init(), em PHP CRUD não existe
+        if (!isset($this->conexao) || !$this->conexao) {
+            $this->conexao = Conexao::conectar(); // garante conexão
+        }
+        $this->setCampos(['usuario', 'senha', 'criado_em', 'atualizado_em']);
     }
 
-    // ============================
-    // GETTERS / SETTERS simples
-    // ============================
-    public function getId() { return $this->id; }
-    public function setId($v) { $this->id = $v; }
-
-    public function getUsuario() { return $this->usuario; }
-    public function setUsuario($v) { $this->usuario = trim($v); }
-
-    public function getSenha() { return $this->senha; }
-    public function setSenha($senhaPlain) {
-        $this->senha = password_hash($senhaPlain, PASSWORD_BCRYPT);
+    /* ---------------------
+       GETTERS / SETTERS
+    --------------------- */
+    public function getId()
+    {
+        return $this->id;
+    }
+    public function setId($v)
+    {
+        $this->id = $v;
     }
 
-    public function getCriadoEm() { return $this->criado_em; }
-    public function setCriadoEm($v) { $this->criado_em = $v; }
+    public function getUsuario()
+    {
+        return $this->usuario;
+    }
+    public function setUsuario($v)
+    {
+        $this->usuario = trim($v);
+    }
 
-    public function getAtualizadoEm() { return $this->atualizado_em; }
-    public function setAtualizadoEm($v) { $this->atualizado_em = $v; }
+    public function getSenha()
+    {
+        return $this->senha;
+    }
+    public function setSenha($plain)
+    {
+        $this->senha = password_hash($plain, PASSWORD_BCRYPT);
+    }
 
-    // ============================
-    // Helper: fetch assoc de mysqli_stmt
-    // ============================
-    private function fetchAssocFromStmt($stmt) {
-        // tenta get_result (requer mysqlnd)
+    public function getCriadoEm()
+    {
+        return $this->criado_em;
+    }
+    public function setCriadoEm($v)
+    {
+        $this->criado_em = $v;
+    }
+
+    public function getAtualizadoEm()
+    {
+        return $this->atualizado_em;
+    }
+    public function setAtualizadoEm($v)
+    {
+        $this->atualizado_em = $v;
+    }
+
+    /* ---------------------
+       HELPERS
+    --------------------- */
+    private function fetchAssocFromStmt($stmt)
+    {
         if (method_exists($stmt, 'get_result')) {
             $res = $stmt->get_result();
             return $res ? $res->fetch_assoc() : null;
         }
-
-        // fallback: bind_result
         $meta = $stmt->result_metadata();
-        if (!$meta) return null;
+        if (!$meta)
+            return null;
         $fields = [];
         $row = [];
         while ($field = $meta->fetch_field()) {
@@ -60,188 +99,175 @@ class Admin extends CRUD {
         }
         call_user_func_array([$stmt, 'bind_result'], $fields);
         if ($stmt->fetch()) {
-            // copie valores
             $result = [];
-            foreach ($row as $k => $v) $result[$k] = $v;
+            foreach ($row as $k => $v)
+                $result[$k] = $v;
             return $result;
         }
         return null;
     }
 
-    // ============================
-    // LOGIN
-    // ============================
-    public function login($usuario, $senhaPlain) {
-        try {
-            $sql = "SELECT * FROM {$this->tabela} WHERE usuario = ? LIMIT 1";
-            $stmt = $this->conexao->prepare($sql);
-            if (!$stmt) throw new Exception("Prepare failed: " . $this->conexao->error);
+    /* ---------------------
+       LOGIN
+    --------------------- */
+    public function login($usuario, $senhaPlain)
+    {
+        if (!$this->conexao)
+            throw new Exception("Conexão MySQL não disponível no objeto Admin.");
 
-            $stmt->bind_param('s', $usuario);
-            if (!$stmt->execute()) throw new Exception("Execute failed: " . $stmt->error);
+        $sql = "SELECT * FROM {$this->tabela} WHERE usuario = ? LIMIT 1";
+        $stmt = $this->conexao->prepare($sql);
+        if (!$stmt)
+            throw new Exception("Prepare falhou: " . $this->conexao->error);
 
-            $admin = $this->fetchAssocFromStmt($stmt);
-            $stmt->close();
+        $stmt->bind_param('s', $usuario);
+        $stmt->execute();
+        $admin = $this->fetchAssocFromStmt($stmt);
+        $stmt->close();
 
-            if (!$admin) return false;
+        if (!$admin)
+            return false;
+        if (!password_verify($senhaPlain, $admin['senha']))
+            return false;
 
-            // verifica senha
-            if (!password_verify($senhaPlain, $admin['senha'])) return false;
+        $this->id = (int) $admin['id'];
+        $this->usuario = $admin['usuario'];
+        $this->senha = $admin['senha'];
+        $this->criado_em = $admin['criado_em'];
+        $this->atualizado_em = $admin['atualizado_em'];
 
-            // popula o objeto
-            $this->id = (int)$admin['id'];
-            $this->usuario = $admin['usuario'];
-            $this->senha = $admin['senha'];
-            $this->criado_em = $admin['criado_em'];
-            $this->atualizado_em = $admin['atualizado_em'];
+        if (session_status() !== PHP_SESSION_ACTIVE)
+            session_start();
+        $_SESSION['admin'] = ['id' => $this->id, 'usuario' => $this->usuario];
 
-            // inicia sessão se não estiver
-            if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-            $_SESSION['admin'] = ['id' => $this->id, 'usuario' => $this->usuario];
-
-            return true;
-        } catch (Exception $e) {
-            throw new Exception("Erro no login: " . $e->getMessage());
-        }
-    }
-
-    // ============================
-    // LOGOUT
-    // ============================
-    public function logout() {
-        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-        if (isset($_SESSION['admin'])) unset($_SESSION['admin']);
-        // não destrói sessão globalmente (opcional)
-        // session_destroy();
         return true;
     }
 
-    // ============================
-    // VERIFICA SESSÃO
-    // ============================
-    public function verificaSessao() {
-        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-        if (!isset($_SESSION['admin'])) {
-            throw new Exception("Sessão expirada ou inexistente. Faça login novamente.");
-        }
+    /* ---------------------
+       LOGOUT / SESSÃO
+    --------------------- */
+    public function logout()
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE)
+            session_start();
+        unset($_SESSION['admin']);
         return true;
     }
 
-    // ============================
-    // ATUALIZAR
-    // ============================
-    public function atualizar() {
-        if (!$this->id) throw new Exception("ID do admin não definido para atualização.");
-
-        try {
-            if (!empty($this->senha)) {
-                $sql = "UPDATE {$this->tabela} SET usuario = ?, senha = ?, atualizado_em = NOW() WHERE id = ?";
-                $stmt = $this->conexao->prepare($sql);
-                if (!$stmt) throw new Exception("Prepare failed: " . $this->conexao->error);
-                $stmt->bind_param('ssi', $this->usuario, $this->senha, $this->id);
-            } else {
-                $sql = "UPDATE {$this->tabela} SET usuario = ?, atualizado_em = NOW() WHERE id = ?";
-                $stmt = $this->conexao->prepare($sql);
-                if (!$stmt) throw new Exception("Prepare failed: " . $this->conexao->error);
-                $stmt->bind_param('si', $this->usuario, $this->id);
-            }
-
-            if (!$stmt->execute()) throw new Exception("Execute failed: " . $stmt->error);
-            $affected = $stmt->affected_rows;
-            $stmt->close();
-
-            return $affected > 0;
-        } catch (Exception $e) {
-            throw new Exception("Erro ao atualizar admin: " . $e->getMessage());
-        }
+    public function verificaSessao()
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE)
+            session_start();
+        if (!isset($_SESSION['admin']))
+            throw new Exception("Sessão expirada ou inexistente.");
+        return true;
     }
 
-    // ============================
-    // CARREGAR POR ID
-    // ============================
-    public function carregarPorId($id) {
-        try {
-            $sql = "SELECT * FROM {$this->tabela} WHERE id = ? LIMIT 1";
+    /* ---------------------
+       ATUALIZAR
+    --------------------- */
+    public function atualizar()
+    {
+        if (!$this->id)
+            throw new Exception("ID do admin não definido.");
+
+        if (!empty($this->senha)) {
+            $sql = "UPDATE {$this->tabela} SET usuario=?, senha=?, atualizado_em=NOW() WHERE id=?";
             $stmt = $this->conexao->prepare($sql);
-            if (!$stmt) throw new Exception("Prepare failed: " . $this->conexao->error);
-
-            // aceita id numérico ou string, usa i quando inteiro
-            if (is_int($id) || ctype_digit((string)$id)) {
-                $idInt = (int)$id;
-                $stmt->bind_param('i', $idInt);
-            } else {
-                $stmt->bind_param('s', $id);
-            }
-
-            if (!$stmt->execute()) throw new Exception("Execute failed: " . $stmt->error);
-            $admin = $this->fetchAssocFromStmt($stmt);
-            $stmt->close();
-
-            if (!$admin) return false;
-
-            $this->id = (int)$admin['id'];
-            $this->usuario = $admin['usuario'];
-            $this->senha = $admin['senha'];
-            $this->criado_em = $admin['criado_em'];
-            $this->atualizado_em = $admin['atualizado_em'];
-
-            return true;
-        } catch (Exception $e) {
-            throw new Exception("Erro ao carregar admin: " . $e->getMessage());
+            $stmt->bind_param('ssi', $this->usuario, $this->senha, $this->id);
+        } else {
+            $sql = "UPDATE {$this->tabela} SET usuario=?, atualizado_em=NOW() WHERE id=?";
+            $stmt = $this->conexao->prepare($sql);
+            $stmt->bind_param('si', $this->usuario, $this->id);
         }
+
+        $stmt->execute();
+        $affected = $stmt->affected_rows;
+        $stmt->close();
+
+        return $affected > 0;
+    }
+
+    /* ---------------------
+       CARREGAR POR ID
+    --------------------- */
+    public function carregarPorId($id)
+    {
+        if (!$this->conexao)
+            throw new Exception("Conexão MySQL não disponível.");
+
+        $sql = "SELECT * FROM {$this->tabela} WHERE id=? LIMIT 1";
+        $stmt = $this->conexao->prepare($sql);
+        if (is_int($id) || ctype_digit((string) $id))
+            $stmt->bind_param('i', $id);
+        else
+            $stmt->bind_param('s', $id);
+
+        $stmt->execute();
+        $admin = $this->fetchAssocFromStmt($stmt);
+        $stmt->close();
+
+        if (!$admin)
+            return false;
+
+        $this->id = (int) $admin['id'];
+        $this->usuario = $admin['usuario'];
+        $this->senha = $admin['senha'];
+        $this->criado_em = $admin['criado_em'];
+        $this->atualizado_em = $admin['atualizado_em'];
+
+        return true;
     }
 }
 
-// ============================
-// AUTO-TESTE (executa só se chamado diretamente)
-// ============================
+/* ---------------------
+   AUTO-TESTE
+--------------------- */
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'])) {
     session_start();
-    echo "🔄 Testando Admin.class.php<br>";
+    echo "<pre>🔄 Auto-teste Admin.class.php\n\n";
 
     try {
+        echo "PHP version: " . PHP_VERSION . "\n";
+        echo "MySQLi client: " . (function_exists('mysqli_get_client_info') ? mysqli_get_client_info() : 'n/a') . "\n";
+
         $admin = new Admin();
-        echo "✅ Instância criada, conexão estabelecida.<br>";
+        echo "✅ Instância Admin criada\n";
 
-        // CARREGAR
-        echo "🔹 Carregando admin id=1<br>";
+        echo "\n🔹 Carregar admin id=1\n";
         $ok = $admin->carregarPorId(1);
-        if ($ok) {
-            echo "✅ Carregado: usuario=" . htmlspecialchars($admin->getUsuario()) . "<br>";
-        } else {
-            echo "⚠️ Nenhum admin com id=1 encontrado.<br>";
-        }
+        echo $ok ? "✅ Carregado: usuario=" . $admin->getUsuario() . "\n" : "⚠️ Nenhum admin com id=1\n";
 
-        // LOGIN - ATENÇÃO: use a senha real do seu DB para testar
-        echo "🔹 Tentando login (use a senha real do DB)...<br>";
-        $testeSenha = ''; // <-- coloque a senha atual aqui para testar, e remova depois
+        echo "\n🔹 Teste de login (defina \$testeSenha)\n";
+        $testeSenha = 'SENHA_ATUAL_DO_ADMIN';
         if ($testeSenha !== '') {
             $login = $admin->login($admin->getUsuario(), $testeSenha);
-            echo $login ? "✅ Login ok<br>" : "❌ Login falhou (senha incorreta)<br>";
+            echo $login ? "✅ Login OK\n" : "❌ Login falhou\n";
         } else {
-            echo "ℹ️ Login não testado (defina \$testeSenha para testar).<br>";
+            echo "ℹ️ Login não testado (defina \$testeSenha)\n";
         }
 
-        // ATUALIZAR (teste não destrutivo)
-        echo "🔹 Teste de atualização (não aplicará se nenhuma alteração)<br>";
-        $usuarioAntes = $admin->getUsuario();
-        $admin->setUsuario($usuarioAntes . "_teste");
-        // não altera senha no teste para não quebrar login
-        $atualizou = $admin->atualizar();
-        echo $atualizou ? "✅ Atualizou (verifique no DB)<br>" : "⚠️ Não houve mudança (provavelmente mesmo valor)<br>";
-        // restaura usuario (opcional)
-        $admin->setUsuario($usuarioAntes);
+        echo "\n🔹 Teste de atualização (aplica sufixo _tmp e restaura)\n";
+        $orig = $admin->getUsuario();
+        $admin->setUsuario($orig . "_tmp");
+        $changed = $admin->atualizar();
+        echo $changed ? "✅ Atualizou (verifique no DB)\n" : "⚠️ Nenhuma alteração aplicada\n";
+        $admin->setUsuario($orig);
         $admin->atualizar();
 
-        // LOGOUT
         $admin->logout();
-        echo "🔹 Logout executado<br>";
+        echo "\n🔹 Logout executado\n";
 
     } catch (Exception $e) {
-        echo "❌ Erro no autoteste: " . htmlspecialchars($e->getMessage()) . "<br>";
+        echo "❌ Exceção: " . $e->getMessage() . "\n";
+        echo $e->getTraceAsString() . "\n";
+    } finally {
+        try {
+            Conexao::desconectar();
+            echo "\n🔌 Conexão encerrada\n";
+        } catch (Exception $ex) {
+        }
     }
 
-    Conexao::desconectar();
-    echo "🎉 Fim do teste.<br>";
+    echo "\n🎉 Fim do autoteste\n</pre>";
 }
-?>

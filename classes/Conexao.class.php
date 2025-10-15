@@ -1,62 +1,60 @@
 <?php
 /**
  * Classe Conexao
- * Gerencia conexão com o banco MySQL
- * Sistema: Vocal Louvor & Vida (versão PHP)
+ * Gerencia conexão com o banco MySQL (local + Infinity)
  */
 
 class Conexao {
     private static ?mysqli $instancia = null;
-    private static ?array $config = null;
+    private static ?array $configLocal = null;
+    private static ?array $configInfinity = null;
 
-    private function __construct() {
-        // Evita instanciar diretamente
-    }
+    private function __construct() {}
 
-    /**
-     * Carrega as configurações do arquivo config.ini
-     */
     private static function carregarConfig(): void {
-        if (self::$config === null) {
+        if (self::$configLocal === null || self::$configInfinity === null) {
             $arquivo = __DIR__ . "/../config.ini";
             if (!file_exists($arquivo)) {
                 die("❌ Arquivo de configuração 'config.ini' não encontrado em: $arquivo");
             }
+            $ini = parse_ini_file($arquivo, true);
+            self::$configLocal = $ini['local'] ?? null;
+            self::$configInfinity = $ini['infinity'] ?? null;
 
-            self::$config = parse_ini_file($arquivo, true)['database'];
+            if (!self::$configLocal || !self::$configInfinity) {
+                die("❌ Configurações 'local' e 'infinity' devem existir no config.ini");
+            }
         }
     }
 
-    /**
-     * Conecta ao banco de dados (singleton)
-     */
     public static function conectar(): mysqli {
         self::carregarConfig();
 
-        $host = trim(self::$config['host'], '"');
-        $user = trim(self::$config['username'], '"');
-        $password = trim(self::$config['password'], '"');
-        $dbname = trim(self::$config['dbname'], '"');
-        $port = intval(self::$config['port']);
-        $charset = trim(self::$config['charset'], '"');
-
-        if (self::$instancia === null) {
-            self::$instancia = new mysqli($host, $user, $password, $dbname, $port);
-
-            if (self::$instancia->connect_error) {
-                die("❌ Erro ao conectar ao banco de dados: " . self::$instancia->connect_error);
-            }
-
-            self::$instancia->set_charset($charset);
-            echo "✅ Conexão com o banco de dados '{$dbname}' realizada com sucesso!<br>";
+        if (self::$instancia !== null) {
+            return self::$instancia;
         }
 
+        // Tenta conectar no banco local
+        $cfg = self::$configLocal;
+        $mysqli = @new mysqli($cfg['host'], $cfg['username'], $cfg['password'], $cfg['dbname'], intval($cfg['port']));
+        if ($mysqli->connect_errno) {
+            // Se falhar, tenta conectar no banco Infinity
+            $cfg = self::$configInfinity;
+            $mysqli = @new mysqli($cfg['host'], $cfg['username'], $cfg['password'], $cfg['dbname'], intval($cfg['port']));
+            if ($mysqli->connect_errno) {
+                die("❌ Não foi possível conectar a nenhum banco de dados. Erro: " . $mysqli->connect_error);
+            } else {
+                echo "✅ Conectado ao banco Infinity ({$cfg['dbname']}) com sucesso!<br>";
+            }
+        } else {
+            echo "✅ Conectado ao banco local ({$cfg['dbname']}) com sucesso!<br>";
+        }
+
+        $mysqli->set_charset($cfg['charset']);
+        self::$instancia = $mysqli;
         return self::$instancia;
     }
 
-    /**
-     * Desconecta do banco de dados
-     */
     public static function desconectar(): void {
         if (self::$instancia !== null) {
             self::$instancia->close();
@@ -65,13 +63,9 @@ class Conexao {
         }
     }
 
-    /**
-     * Mostra as tabelas existentes (teste)
-     */
     public static function listarTabelas(): void {
         $conn = self::conectar();
         $resultado = $conn->query("SHOW TABLES");
-
         if ($resultado) {
             echo "📋 Tabelas encontradas:<br>";
             while ($linha = $resultado->fetch_array()) {
@@ -83,9 +77,7 @@ class Conexao {
     }
 }
 
-// ============================================================
-// TESTE AUTOMÁTICO — Executado se rodar diretamente o arquivo
-// ============================================================
+// Teste automático
 if (basename(__FILE__) === basename($_SERVER["SCRIPT_FILENAME"])) {
     echo "🔄 Testando conexão...<br>";
     Conexao::listarTabelas();
