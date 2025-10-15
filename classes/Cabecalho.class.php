@@ -8,16 +8,15 @@ class Cabecalho
   private ?string $titulo = null;
   private ?string $subtitulo = null;
   private ?string $logo = null;
-  private ?string $fundo = null;
+  private ?string $fundo = null;     // imagem de fundo
+  private ?string $cor_fundo = null; // cor de fundo sempre salva
 
   public function __construct()
   {
     $this->conn = Conexao::conectar();
   }
 
-  /* =======================
-     GETTERS e SETTERS
-  ======================= */
+  // GETTERS e SETTERS
   public function getId(): ?int
   {
     return $this->id;
@@ -63,50 +62,52 @@ class Cabecalho
     $this->fundo = $fundo;
   }
 
-  /* =======================
-     BANCO DE DADOS
-  ======================= */
+  public function getCorFundo(): ?string
+  {
+    return $this->cor_fundo;
+  }
+  public function setCorFundo(?string $cor_fundo)
+  {
+    $this->cor_fundo = $cor_fundo;
+  }
 
-  // Buscar cabeçalho (só existe 1)
+  // Buscar cabeçalho
   public function buscar(): ?array
   {
     $sql = "SELECT * FROM cabecalho ORDER BY id DESC LIMIT 1";
     $result = $this->conn->query($sql);
-
     if ($result && $dados = $result->fetch_assoc()) {
       $this->id = (int) $dados['id'];
       $this->titulo = $dados['titulo'];
       $this->subtitulo = $dados['subtitulo'];
       $this->logo = $dados['logo'];
       $this->fundo = $dados['fundo'];
+      $this->cor_fundo = $dados['cor_fundo'];
       return $dados;
     }
     return null;
   }
 
-  // Inserir ou atualizar
+  // Salvar ou atualizar
   public function salvar(): bool
   {
     if ($this->id) {
-      // Atualizar
       $stmt = $this->conn->prepare("
-                UPDATE cabecalho 
-                SET titulo = ?, subtitulo = ?, logo = ?, fundo = ?, atualizado_em = NOW()
+                UPDATE cabecalho
+                SET titulo = ?, subtitulo = ?, logo = ?, fundo = ?, cor_fundo = ?, atualizado_em = NOW()
                 WHERE id = ?
             ");
-      $stmt->bind_param("ssssi", $this->titulo, $this->subtitulo, $this->logo, $this->fundo, $this->id);
+      $stmt->bind_param("sssssi", $this->titulo, $this->subtitulo, $this->logo, $this->fundo, $this->cor_fundo, $this->id);
       return $stmt->execute();
     } else {
-      // Inserir
       $stmt = $this->conn->prepare("
-                INSERT INTO cabecalho (titulo, subtitulo, logo, fundo, criado_em, atualizado_em) 
-                VALUES (?, ?, ?, ?, NOW(), NOW())
+                INSERT INTO cabecalho (titulo, subtitulo, logo, fundo, cor_fundo, criado_em, atualizado_em)
+                VALUES (?, ?, ?, ?, ?, NOW(), NOW())
             ");
-      $stmt->bind_param("ssss", $this->titulo, $this->subtitulo, $this->logo, $this->fundo);
+      $stmt->bind_param("sssss", $this->titulo, $this->subtitulo, $this->logo, $this->fundo, $this->cor_fundo);
       $ok = $stmt->execute();
-      if ($ok) {
+      if ($ok)
         $this->id = $stmt->insert_id;
-      }
       return $ok;
     }
   }

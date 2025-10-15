@@ -35,8 +35,8 @@ $totalIntegrantes = count($integrante->listar()); // retorna apenas ativos por p
                     <div class="card-body">
                          <h5 class="card-title">Página Rápida</h5>
                          <p class="card-text">Acesse rapidamente as seções do sistema:</p>
-                         <a href="edit_cabecalho.php" class="btn btn-primary btn-sm">Editar Cabeçalho</a>
-                         <a href="integrantes.php" class="btn btn-secondary btn-sm">Gerenciar Integrantes</a>
+                         <a href="../cabecalho/edit_cabecalho.php" class="btn btn-primary btn-sm">Editar Cabeçalho</a>
+                         <a href="../integrantes/exibe_integrante.php" class="btn btn-secondary btn-sm">Gerenciar Integrantes</a>
                     </div>
                </div>
           </div>

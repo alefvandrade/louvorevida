@@ -6,48 +6,30 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 require_once __DIR__ . '/../classes/Cabecalho.class.php';
 require_once __DIR__ . '/../classes/Admin.class.php';
 
-// Valores padrão
-$cabecalhoTitulo = "Vocal Louvor & Vida";
-$cabecalhoSubtitulo = "Louvor e adoração";
-$cabecalhoFundo = "#0d6efd"; // cor padrão azul
-$cabecalhoFundoImagem = null;
-
 $cabecalho = new Cabecalho();
-if ($cabecalho->buscar()) {
-    $cabecalhoTitulo = htmlspecialchars($cabecalho->getTitulo() ?: $cabecalhoTitulo);
-    $cabecalhoSubtitulo = htmlspecialchars($cabecalho->getSubtitulo() ?: $cabecalhoSubtitulo);
+$cabecalho->buscar();
 
-    if ($cabecalho->getFundo() && file_exists("../" . $cabecalho->getFundo())) {
-        $cabecalhoFundoImagem = $cabecalho->getFundo();
-    } else {
-        $cabecalhoFundo = htmlspecialchars($cabecalhoFundo);
-    }
-
-    $logoMenu = $cabecalho->getLogo() ?: null;
-} else {
-    $logoMenu = null;
-}
+// Cabeçalho
+$cabecalhoTitulo = htmlspecialchars($cabecalho->getTitulo() ?: "Vocal Louvor & Vida");
+$cabecalhoSubtitulo = htmlspecialchars($cabecalho->getSubtitulo() ?: "Louvor e adoração");
+$cabecalhoFundo = $cabecalho->getCorFundo() ?: "#0d6efd";
+$cabecalhoFundoImagem = $cabecalho->getFundo() && file_exists("../" . $cabecalho->getFundo()) ? "../" . $cabecalho->getFundo() : null;
+$logoMenu = $cabecalho->getLogo() ?: null;
 
 // Usuário logado
 $adminNome = 'Nome não encontrado';
 $adminUsuario = null;
-
 if (!empty($_SESSION['admin']['id'])) {
     try {
         $admin = new Admin();
         if ($admin->carregarPorId((int) $_SESSION['admin']['id'])) {
-            $nome = trim((string) $admin->getUsuario());
-            if ($nome !== '') {
-                $adminNome = $nome;
-                $adminUsuario = $admin;
-            }
+            $adminNome = trim((string) $admin->getUsuario()) ?: $adminNome;
+            $adminUsuario = $admin;
         }
     } catch (Exception $e) {
-        // Nenhuma mensagem de erro exibida
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -57,21 +39,24 @@ if (!empty($_SESSION['admin']['id'])) {
     <meta name="description" content="<?= $cabecalhoSubtitulo ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- Favicon -->
+    <?php if ($logoMenu && file_exists('../' . $logoMenu)): ?>
+        <link rel="icon" href="../<?= $logoMenu ?>" type="image/png">
+    <?php else: ?>
+        <link rel="icon" href="../favicon.ico" type="image/x-icon">
+    <?php endif; ?>
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <style>
-        :root {
-            --header-bg-color:
+        header.navbar {
+            background-color:
                 <?= $cabecalhoFundo ?>
             ;
-        }
-
-        header.navbar {
-            background-color: var(--header-bg-color);
             <?php if ($cabecalhoFundoImagem): ?>
-                background-image: url('../<?= $cabecalhoFundoImagem ?>');
+                background-image: url('<?= $cabecalhoFundoImagem ?>');
                 background-size: cover;
                 background-position: center;
             <?php endif; ?>
@@ -103,6 +88,11 @@ if (!empty($_SESSION['admin']['id'])) {
             align-items: center;
             gap: 0.5rem;
         }
+
+        .navbar-brand img {
+            height: 40px;
+            object-fit: contain;
+        }
     </style>
 </head>
 
@@ -111,8 +101,10 @@ if (!empty($_SESSION['admin']['id'])) {
     <header class="navbar navbar-expand-lg navbar-dark shadow">
         <div class="container">
             <a class="navbar-brand fw-bold" href="index.php">
-                <i class="bi bi-music-note-beamed fs-4"></i>
-                <?= $cabecalhoTitulo ?>
+                <?php if ($logoMenu && file_exists('../' . $logoMenu)): ?>
+                    <img src="../<?= $logoMenu ?>" alt="Logo">
+                <?php endif; ?>
+                <span><?= $cabecalhoTitulo ?></span>
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarConteudo">
@@ -122,15 +114,14 @@ if (!empty($_SESSION['admin']['id'])) {
             <div class="collapse navbar-collapse" id="navbarConteudo">
                 <ul class="navbar-nav mx-auto">
                     <li class="nav-item"><a href="../dashboard/dashboard.php" class="nav-link">Início</a></li>
-                    <li class="nav-item"><a href="agenda.php" class="nav-link">Agenda</a></li>
-                    <li class="nav-item"><a href="ministerios.php" class="nav-link">Ministérios</a></li>
+                    <li class="nav-item"><a href="../agenda/exibe_agenda.php" class="nav-link">Agenda</a></li>
+                    <li class="nav-item"><a href="../integrantes/exibe_integrante.php" class="nav-link">Integrantes</a></li>
                     <li class="nav-item"><a href="contato.php" class="nav-link">Contato</a></li>
                 </ul>
 
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item">
-                        <i class="bi bi-brightness-high theme-toggle fs-5 me-3" title="Trocar tema"></i>
-                    </li>
+                    <li class="nav-item"><i class="bi bi-brightness-high theme-toggle fs-5 me-3"
+                            title="Trocar tema"></i></li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle fw-semibold" href="#" role="button"
                             data-bs-toggle="dropdown">
@@ -170,9 +161,6 @@ if (!empty($_SESSION['admin']['id'])) {
             }
         }
 
-        themeToggle.addEventListener('click', () => {
-            setTheme(!body.classList.contains('bg-dark'));
-        });
-
+        themeToggle.addEventListener('click', () => { setTheme(!body.classList.contains('bg-dark')) });
         if (localStorage.getItem('theme') === 'dark') setTheme(true);
     </script>

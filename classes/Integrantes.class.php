@@ -8,12 +8,12 @@ class Integrante extends CRUD
   private string $nome_user;
   private string $senha; // hash
   private string $funcao;
-  private string $foto;
   private int $ativo;
+  private string $foto;
 
   public function __construct()
   {
-    parent::__construct("integrantes"); // tabela do banco
+    parent::__construct("integrantes");
     $this->setCampos(['nome', 'nome_user', 'senha', 'funcao', 'foto', 'ativo']);
   }
 
@@ -82,16 +82,12 @@ class Integrante extends CRUD
   }
 
   /* =======================
-     MÉTODOS ESPECÍFICOS
+     MÉTODOS CRUD / LOGIN
   ======================= */
 
-  // Sobrescreve create para usar hash da senha
+  // Cadastrar
   public function cadastrar(): int
   {
-    if (!empty($this->senha)) {
-      $this->setSenha($this->senha);
-    }
-
     $dados = [
       'nome' => $this->nome,
       'nome_user' => $this->nome_user,
@@ -100,11 +96,10 @@ class Integrante extends CRUD
       'foto' => $this->foto,
       'ativo' => $this->ativo
     ];
-
     return $this->create($dados);
   }
 
-  // Atualiza integrante
+  // Atualizar
   public function atualizar(): bool
   {
     $dados = [
@@ -116,14 +111,13 @@ class Integrante extends CRUD
     ];
 
     if (!empty($this->senha)) {
-      $this->setSenha($this->senha);
       $dados['senha'] = $this->senha;
     }
 
     return $this->update($this->id, $dados);
   }
 
-  // Listar integrantes (ativos por padrão)
+  // Listar integrantes
   public function listar(bool $apenasAtivos = true): array
   {
     $condicao = $apenasAtivos ? "ativo = 1" : "";
@@ -133,22 +127,21 @@ class Integrante extends CRUD
   // Buscar por nome_user
   public function buscarPorNomeUser(string $nomeUser): ?array
   {
-    $res = $this->read("nome_user = ?", [$nomeUser], "id ASC");
+    $res = $this->read("nome_user = ?", [$nomeUser]);
     return $res[0] ?? null;
   }
 
-  // Login do integrante
+  // Login: retorna array do usuário sem senha, ou null
   public function login(string $nomeUser, string $senha): ?array
   {
     $usuario = $this->buscarPorNomeUser($nomeUser);
     if (!$usuario)
       return null;
-
     if (!password_verify($senha, $usuario['senha']))
       return null;
 
+    // Retorna array sem a senha
     unset($usuario['senha']);
-    $_SESSION['integrante'] = $usuario;
     return $usuario;
   }
 }

@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // --- Verifica Admin ---
     $admin = new Admin();
-    if ($admin->login($usuario, $senha)) { // supondo que Admin::login retorne true/false
+    if ($admin->login($usuario, $senha)) {
         $_SESSION['admin'] = [
             'id' => $admin->getId(),
             'usuario' => $admin->getUsuario()
@@ -22,10 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // --- Verifica Integrante ---
     $integrante = new Integrante();
-    $dados = $integrante->login($usuario, $senha);
+    $dados = $integrante->login($usuario, $senha); // retorna array ou null
     if ($dados) {
-        $_SESSION['integrante'] = $dados;
-        header('Location: edit_integrante.php');
+        $_SESSION['integrante'] = $dados; // dados do próprio integrante
+        header('Location: meu_cartao.php');
         exit;
     }
 
@@ -35,31 +35,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
-<meta charset="UTF-8">
-<title>Login</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-light">
-
-<div class="container d-flex justify-content-center align-items-center" style="height:100vh">
-    <div class="card p-4 shadow" style="width: 360px;">
-        <h3 class="text-center mb-3">Login</h3>
-        <?= $mensagem ?>
-        <form method="POST">
-            <div class="mb-3">
-                <label class="form-label">Usuário</label>
-                <input type="text" class="form-control" name="usuario" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Senha</label>
-                <input type="password" class="form-control" name="senha" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Entrar</button>
-        </form>
+    <div class="container d-flex justify-content-center align-items-center" style="height:100vh">
+        <div class="card p-4 shadow" style="width: 360px;">
+            <h3 class="text-center mb-3">Login</h3>
+            <?= $mensagem ?>
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Usuário</label>
+                    <input type="text" class="form-control" name="usuario" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Senha</label>
+                    <input type="password" class="form-control" name="senha" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Entrar</button>
+            </form>
+        </div>
     </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
