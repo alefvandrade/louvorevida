@@ -1,148 +1,161 @@
-import Conexao from "./Conexao.js";
+<?php
+require_once __DIR__ . '/Conexao.php';
 
 /**
  * Classe genérica para operações CRUD (Create, Read, Update, Delete)
- * Sistema: Vocal Louvor & Vida
+ * Sistema: Vocal Louvor & Vida (versão PHP)
  */
-export default class CRUD {
-  constructor(tabela) {
-    this.tabela = tabela;
-    this.conexao = null;
-    this.campos = [];
-    this.chavePrimaria = "id";
-  }
+class CRUD {
+    protected string $tabela;
+    protected mysqli $conexao;
+    protected array $campos = [];
+    protected string $chavePrimaria = 'id';
 
-  async init() {
-    // Garante conexão ativa
-    if (!this.conexao) {
-      this.conexao = await Conexao.conectar();
+    public function __construct(string $tabela) {
+        $this->tabela = $tabela;
+        $this->conexao = Conexao::conectar();
     }
-  }
 
-  setCampos(campos) {
-    this.campos = campos;
-  }
-  
-  async executar(sql, params = []) {
-    await this.init();
-    try {
-      const [rowsOrResult] = await this.conexao.execute(sql, params);
+    /** Define os campos válidos do CRUD */
+    public function setCampos(array $campos): void {
+        $this->campos = $campos;
+    }
 
-      // Para SELECT o mysql2/promise retorna array de objetos (rows)
-      // Para INSERT/UPDATE/DELETE retorna um ResultObject — detectamos pelo tipo
-      // Se for array -> SELECT -> retorna array
-      if (Array.isArray(rowsOrResult)) {
-        return rowsOrResult;
-      }
+    /** Executa uma query SQL genérica */
+    public function executar(string $sql, array $params = []): mixed {
+        $stmt = $this->conexao->prepare($sql);
+        if (!$stmt) {
+            throw new Exception("Erro ao preparar SQL: " . $this->conexao->error);
+        }
 
-      // Caso contrário, é o objeto de resultado (insertId, affectedRows...)
-      return rowsOrResult;
-    } catch (erro) {
-      throw new Error(`Erro ao executar SQL em ${this.tabela}: ${erro.message}`);
+        if (!empty($params)) {
+            $tipos = str_repeat('s', count($params));
+            $stmt->bind_param($tipos, ...$params);
+        }
+
+        if (!$stmt->execute()) {
+            throw new Exception("Erro ao executar SQL: " . $stmt->error);
+        }
+
+        $resultado = $stmt->get_result();
+        if ($resultado !== false) {
+            return $resultado->fetch_all(MYSQLI_ASSOC);
+        }
+
+        return [
+            'affectedRows' => $stmt->affected_rows,
+            'insertId' => $stmt->insert_id
+        ];
+    }
+
+    /** CREATE — Inserir novo registro */
+    public function create(array $dados): int {
+        $camposFiltrados = array_intersect_key($dados, array_flip($this->campos));
+
+        $colunas = implode(', ', array_keys($camposFiltrados));
+        $placeholders = implode(', ', array_fill(0, count($camposFiltrados), '?'));
+        $valores = array_values($camposFiltrados);
+
+        $sql = "INSERT INTO {$this->tabela} ($colunas) VALUES ($placeholders)";
+        $stmt = $this->conexao->prepare($sql);
+        $tipos = str_repeat('s', count($valores));
+        $stmt->bind_param($tipos, ...$valores);
+
+        if (!$stmt->execute()) {
+            throw new Exception("Erro ao inserir em {$this->tabela}: " . $stmt->error);
+        }
+
+        return $stmt->insert_id;
+    }
+
+    /** READ — Buscar registros */
+    public function read(string $condicao = '', array $parametros = [], string $ordem = ''): array {
+        $sql = "SELECT * FROM {$this->tabela}";
+        if ($condicao) $sql .= " WHERE $condicao";
+        if ($ordem) $sql .= " ORDER BY $ordem";
+
+        $stmt = $this->conexao->prepare($sql);
+        if (!empty($parametros)) {
+            $tipos = str_repeat('s', count($parametros));
+            $stmt->bind_param($tipos, ...$parametros);
+        }
+
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+
+        return $resultado ? $resultado->fetch_all(MYSQLI_ASSOC) : [];
+    }
+
+    /** FIND — Buscar um registro por ID */
+    public function find(int|string $id): ?array {
+        $sql = "SELECT * FROM {$this->tabela} WHERE {$this->chavePrimaria} = ? LIMIT 1";
+        $stmt = $this->conexao->prepare($sql);
+        $stmt->bind_param('s', $id);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
+
+        return $resultado && $resultado->num_rows > 0 ? $resultado->fetch_assoc() : null;
+    }
+
+    /** UPDATE — Atualizar registro existente */
+    public function update(int|string $id, array $dados): bool {
+        $camposFiltrados = array_intersect_key($dados, array_flip($this->campos));
+
+        $setClause = implode(', ', array_map(fn($key) => "$key = ?", array_keys($camposFiltrados)));
+        $valores = array_values($camposFiltrados);
+        $valores[] = $id;
+
+        $sql = "UPDATE {$this->tabela} SET $setClause WHERE {$this->chavePrimaria} = ?";
+        $stmt = $this->conexao->prepare($sql);
+        $tipos = str_repeat('s', count($valores));
+        $stmt->bind_param($tipos, ...$valores);
+
+        if (!$stmt->execute()) {
+            throw new Exception("Erro ao atualizar {$this->tabela}: " . $stmt->error);
+        }
+
+        return $stmt->affected_rows > 0;
+    }
+
+    /** DELETE — Remover registro */
+    public function delete(int|string $id): bool {
+        $sql = "DELETE FROM {$this->tabela} WHERE {$this->chavePrimaria} = ?";
+        $stmt = $this->conexao->prepare($sql);
+        $stmt->bind_param('s', $id);
+        $stmt->execute();
+
+        return $stmt->affected_rows > 0;
+    }
+
+    /** COUNT — Contar registros */
+    public function contar(bool $ativoApenas = false): int {
+        $sql = "SELECT COUNT(*) AS total FROM {$this->tabela}";
+        if ($ativoApenas) $sql .= " WHERE ativo = 1";
+
+        $resultado = $this->conexao->query($sql);
+        $linha = $resultado->fetch_assoc();
+
+        return (int) $linha['total'];
     }
 }
 
-/** CREATE — Inserir novo registro */
-async create(dados) {
-    await this.init();
+// ============================================================
+// TESTE AUTOMÁTICO — Executado se rodar diretamente o arquivo
+// ============================================================
+if (basename(__FILE__) === basename($_SERVER["SCRIPT_FILENAME"])) {
+    echo "🔄 Testando CRUD genérico...<br>";
+
+    $crud = new CRUD('admin');
+    $crud->setCampos(['usuario', 'senha', 'criado_em', 'atualizado_em']);
+
     try {
-      const camposFiltrados = Object.keys(dados)
-        .filter((key) => this.campos.includes(key))
-        .reduce((obj, key) => {
-          obj[key] = dados[key];
-          return obj;
-        }, {});
-
-      const colunas = Object.keys(camposFiltrados).join(", ");
-      const placeholders = Object.keys(camposFiltrados)
-        .map(() => "?")
-        .join(", ");
-      const valores = Object.values(camposFiltrados);
-
-      const sql = `INSERT INTO ${this.tabela} (${colunas}) VALUES (${placeholders})`;
-      const [resultado] = await this.conexao.execute(sql, valores);
-
-      return resultado.insertId;
-    } catch (erro) {
-      throw new Error(`Erro ao inserir em ${this.tabela}: ${erro.message}`);
+        echo "📋 Total de admins: " . $crud->contar() . "<br>";
+        $admins = $crud->read();
+        echo "✅ Admins carregados:<pre>" . print_r($admins, true) . "</pre>";
+    } catch (Exception $e) {
+        echo "❌ Erro no teste: " . $e->getMessage();
     }
-  }
 
-  /** READ — Buscar registros */
-  async read(condicao = "", parametros = [], ordem = "") {
-    await this.init();
-    try {
-      let sql = `SELECT * FROM ${this.tabela}`;
-      if (condicao) sql += ` WHERE ${condicao}`;
-      if (ordem) sql += ` ORDER BY ${ordem}`;
-
-      const [linhas] = await this.conexao.execute(sql, parametros);
-      return linhas;
-    } catch (erro) {
-      throw new Error(`Erro ao ler ${this.tabela}: ${erro.message}`);
-    }
-  }
-
-  /** FIND — Buscar um registro por ID */
-  async find(id) {
-    await this.init();
-    try {
-      const sql = `SELECT * FROM ${this.tabela} WHERE ${this.chavePrimaria} = ? LIMIT 1`;
-      const [linhas] = await this.conexao.execute(sql, [id]);
-      return linhas.length > 0 ? linhas[0] : null;
-    } catch (erro) {
-      throw new Error(`Erro ao buscar em ${this.tabela}: ${erro.message}`);
-    }
-  }
-
-  /** UPDATE — Atualizar registro existente */
-  async update(id, dados) {
-    await this.init();
-    try {
-      const camposFiltrados = Object.keys(dados)
-        .filter((key) => this.campos.includes(key))
-        .reduce((obj, key) => {
-          obj[key] = dados[key];
-          return obj;
-        }, {});
-
-      const setClause = Object.keys(camposFiltrados)
-        .map((key) => `${key} = ?`)
-        .join(", ");
-      const valores = [...Object.values(camposFiltrados), id];
-
-      const sql = `UPDATE ${this.tabela} SET ${setClause} WHERE ${this.chavePrimaria} = ?`;
-      const [resultado] = await this.conexao.execute(sql, valores);
-
-      return resultado.affectedRows > 0;
-    } catch (erro) {
-      throw new Error(`Erro ao atualizar ${this.tabela}: ${erro.message}`);
-    }
-  }
-
-  /** DELETE — Remover registro */
-  async delete(id) {
-    await this.init();
-    try {
-      const sql = `DELETE FROM ${this.tabela} WHERE ${this.chavePrimaria} = ?`;
-      const [resultado] = await this.conexao.execute(sql, [id]);
-      return resultado.affectedRows > 0;
-    } catch (erro) {
-      throw new Error(`Erro ao deletar de ${this.tabela}: ${erro.message}`);
-    }
-  }
-
-  /** COUNT — Contar registros */
-  async contar(ativoApenas = false) {
-    await this.init();
-    try {
-      let sql = `SELECT COUNT(*) AS total FROM ${this.tabela}`;
-      if (ativoApenas) sql += " WHERE ativo = 1";
-
-      const [linhas] = await this.conexao.execute(sql);
-      return linhas[0].total;
-    } catch (erro) {
-      throw new Error(`Erro ao contar registros de ${this.tabela}: ${erro.message}`);
-    }
-  }
+    Conexao::desconectar();
 }
+?>
