@@ -10,7 +10,8 @@ $erro = '';
 $dirVideos = __DIR__ . '/../imagens/videos/';
 $webVideos = 'imagens/videos/';
 
-if (!is_dir($dirVideos)) mkdir($dirVideos, 0755, true);
+if (!is_dir($dirVideos))
+    mkdir($dirVideos, 0755, true);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -21,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $v->setOrientacao($_POST['orientacao'] ?? 'auto');
         $v->setAtivo(isset($_POST['ativo']) ? 1 : 0);
 
-        // Capa (opcional)
         if (!empty($_FILES['capa_video']['name'])) {
             $ext = pathinfo($_FILES['capa_video']['name'], PATHINFO_EXTENSION);
             $novo = 'capa_' . time() . '.' . $ext;
@@ -30,7 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Arquivo de vídeo (aceita mp4,webm,ogg,mkv,... conforme solicitado)
         if (!empty($_FILES['video']['name'])) {
             $ext = strtolower(pathinfo($_FILES['video']['name'], PATHINFO_EXTENSION));
             $novo = 'video_' . time() . '.' . $ext;
@@ -71,11 +70,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mb-3">
             <label class="form-label">Capa (opcional)</label>
             <input type="file" name="capa_video" accept="image/*" class="form-control">
+            <div id="preview_capa_cad" style="margin-top:10px;"></div>
         </div>
 
         <div class="mb-3">
             <label class="form-label">Arquivo de Vídeo (mp4, webm, ogg, avi, mkv...)</label>
             <input type="file" name="video" accept="video/*" class="form-control" required>
+            <div id="preview_video_cad" style="margin-top:10px;"></div>
         </div>
 
         <div class="mb-3">
@@ -100,5 +101,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button class="btn btn-success">Cadastrar Vídeo</button>
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function previewFile(input, previewId) {
+            const container = document.getElementById(previewId);
+            container.innerHTML = '';
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                    const img = document.createElement('img');
+                    img.style.maxWidth = '200px';
+                    img.src = URL.createObjectURL(file);
+                    container.appendChild(img);
+                } else if (['mp4', 'webm', 'ogg', 'mov', 'mkv', 'avi'].includes(ext)) {
+                    const video = document.createElement('video');
+                    video.style.maxWidth = '100%';
+                    video.controls = true;
+                    video.src = URL.createObjectURL(file);
+                    container.appendChild(video);
+                }
+            }
+        }
+
+        document.querySelector('input[name="capa_video"]').addEventListener('change', function () { previewFile(this, 'preview_capa_cad'); });
+        document.querySelector('input[name="video"]').addEventListener('change', function () { previewFile(this, 'preview_video_cad'); });
+    });
+</script>
 
 <?php include __DIR__ . '/../dashboard/_footer.php'; ?>

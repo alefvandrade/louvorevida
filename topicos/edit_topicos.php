@@ -12,23 +12,24 @@ $dirVideos = __DIR__ . '/../imagens/videos/';
 $webTopicos = 'imagens/img_topicos/';
 $webVideos = 'imagens/videos/';
 
-if (!is_dir($dirTopicos)) mkdir($dirTopicos, 0755, true);
-if (!is_dir($dirVideos)) mkdir($dirVideos, 0755, true);
+if (!is_dir($dirTopicos))
+    mkdir($dirTopicos, 0755, true);
+if (!is_dir($dirVideos))
+    mkdir($dirVideos, 0755, true);
 
 $t = new Topicos();
 $vObj = new Videos();
 
 $topico = null;
 if (!empty($_GET['id'])) {
-    $dados = $t->buscarPorId((int)$_GET['id']);
-    if ($dados) {
+    $dados = $t->buscarPorId((int) $_GET['id']);
+    if ($dados)
         $topico = $dados;
-    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        $id = (int)$_POST['id'];
+        $id = (int) $_POST['id'];
         $t->setId($id);
         $t->setTitulo($_POST['titulo'] ?? '');
         $t->setTexto($_POST['texto'] ?? '');
@@ -39,14 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $tipo = $_POST['tipo_midia'] ?? 'nenhum';
 
-        // Se trocar imagem
         if ($tipo === 'imagem') {
             if (!empty($_FILES['arquivo_midia']['name'])) {
-                // apagar antiga se era imagem
-                if (!empty($_POST['arquivo_midia_atual']) && strtolower(pathinfo($_POST['arquivo_midia_atual'], PATHINFO_DIRNAME)) === 'imagens/img_topicos') {
-                    if (file_exists(__DIR__ . '/..' . '/' . $_POST['arquivo_midia_atual'])) {
-                        @unlink(__DIR__ . '/..' . '/' . $_POST['arquivo_midia_atual']);
-                    }
+                if (!empty($_POST['arquivo_midia_atual']) && strpos($_POST['arquivo_midia_atual'], 'imagens/img_topicos') === 0) {
+                    @unlink(__DIR__ . '/..' . '/' . $_POST['arquivo_midia_atual']);
                 }
                 $ext = pathinfo($_FILES['arquivo_midia']['name'], PATHINFO_EXTENSION);
                 $novo = 'topico_' . time() . '.' . $ext;
@@ -54,18 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $t->setArquivoMidia($webTopicos . $novo);
                 }
             } else {
-                // manter atual se existente
                 $t->setArquivoMidia($_POST['arquivo_midia_atual'] ?: null);
             }
         } elseif ($tipo === 'video') {
-            // usar video existente ou envio novo
             if (!empty($_POST['video_existente'])) {
                 $t->setArquivoMidia($_POST['video_existente']);
             } elseif (!empty($_FILES['video_upload']['name'])) {
                 $ext = pathinfo($_FILES['video_upload']['name'], PATHINFO_EXTENSION);
                 $novo = 'video_' . time() . '.' . $ext;
                 if (move_uploaded_file($_FILES['video_upload']['tmp_name'], $dirVideos . $novo)) {
-                    // cadastrar como video
                     $nv = new Videos();
                     $nv->setTituloVideo($_POST['titulo_video_novo'] ?? 'Vídeo tópico');
                     $nv->setVideo($webVideos . $novo);
@@ -77,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $t->setArquivoMidia($_POST['arquivo_midia_atual'] ?: null);
             }
         } else {
-            // remover mídia atual (se imagem, apaga arquivo)
             if (!empty($_POST['remover_midia']) && $_POST['remover_midia'] === '1') {
                 if (!empty($_POST['arquivo_midia_atual']) && strpos($_POST['arquivo_midia_atual'], 'imagens/img_topicos/') === 0) {
                     @unlink(__DIR__ . '/..' . '/' . $_POST['arquivo_midia_atual']);
@@ -91,17 +84,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $t->setTipoMidia($tipo);
         if ($t->atualizar()) {
             $mensagem = "<div class='alert alert-success'>Tópico atualizado.</div>";
-            // recarregar valores
             $topico = $t->buscarPorId($id);
         } else {
             $erro = "<div class='alert alert-danger'>Erro ao atualizar ou nada alterado.</div>";
         }
+
     } catch (Exception $e) {
         $erro = "<div class='alert alert-danger'>Erro: " . htmlspecialchars($e->getMessage()) . "</div>";
     }
 }
 
-// carregar lista de vídeos para seleção
 $videosLista = $vObj->listarAtivos();
 ?>
 
@@ -120,34 +112,34 @@ $videosLista = $vObj->listarAtivos();
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Título</label>
-                        <input type="text" name="titulo" class="form-control" value="<?= htmlspecialchars($topico['titulo']) ?>" required>
+                        <input type="text" name="titulo" class="form-control"
+                            value="<?= htmlspecialchars($topico['titulo']) ?>" required>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Texto</label>
-                        <textarea name="texto" class="form-control" rows="6"><?= htmlspecialchars($topico['texto']) ?></textarea>
+                        <textarea name="texto" class="form-control"
+                            rows="6"><?= htmlspecialchars($topico['texto']) ?></textarea>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Botão texto</label>
-                        <input type="text" name="botao_texto" class="form-control" value="<?= htmlspecialchars($topico['botao_texto']) ?>">
+                        <input type="text" name="botao_texto" class="form-control"
+                            value="<?= htmlspecialchars($topico['botao_texto']) ?>">
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Botão link</label>
-                        <input type="url" name="botao_link" class="form-control" value="<?= htmlspecialchars($topico['botao_link']) ?>">
+                        <input type="url" name="botao_link" class="form-control"
+                            value="<?= htmlspecialchars($topico['botao_link']) ?>">
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Lado</label>
                         <select name="lado" class="form-select">
-                            <option value="direita" <?= $topico['lado']=='direita'?'selected':'' ?>>Direita</option>
-                            <option value="esquerda" <?= $topico['lado']=='esquerda'?'selected':'' ?>>Esquerda</option>
+                            <option value="direita" <?= $topico['lado'] == 'direita' ? 'selected' : '' ?>>Direita</option>
+                            <option value="esquerda" <?= $topico['lado'] == 'esquerda' ? 'selected' : '' ?>>Esquerda</option>
                         </select>
                     </div>
-
                     <div class="form-check mb-3">
-                        <input type="checkbox" name="ativo" class="form-check-input" id="ativo" <?= $topico['ativo']? 'checked':'' ?>>
+                        <input type="checkbox" name="ativo" class="form-check-input" id="ativo"
+                            <?= $topico['ativo'] ? 'checked' : '' ?>>
                         <label class="form-check-label" for="ativo">Ativo</label>
                     </div>
                 </div>
@@ -155,62 +147,54 @@ $videosLista = $vObj->listarAtivos();
                 <div class="col-md-6">
                     <h5>Mídia</h5>
                     <div class="mb-3">
-                        <label class="form-label">Tipo</label>
-                        <select id="tipo_midia" name="tipo_midia" class="form-select">
-                            <option value="nenhum" <?= $topico['tipo_midia']=='nenhum'?'selected':'' ?>>Nenhum</option>
-                            <option value="imagem" <?= $topico['tipo_midia']=='imagem'?'selected':'' ?>>Imagem</option>
-                            <option value="video" <?= $topico['tipo_midia']=='video'?'selected':'' ?>>Vídeo</option>
+                        <label class="form-label">Tipo de mídia</label>
+                        <select name="tipo_midia" id="tipo_midia" class="form-select">
+                            <option value="nenhum" <?= $topico['tipo_midia'] == 'nenhum' ? 'selected' : '' ?>>Nenhum</option>
+                            <option value="imagem" <?= $topico['tipo_midia'] == 'imagem' ? 'selected' : '' ?>>Imagem</option>
+                            <option value="video" <?= $topico['tipo_midia'] == 'video' ? 'selected' : '' ?>>Vídeo</option>
                         </select>
                     </div>
 
-                    <div id="div_imagem" style="display:none;">
-                        <label class="form-label">Imagem atual</label><br>
-                        <?php if ($topico['arquivo_midia'] && strpos($topico['arquivo_midia'],'imagens/img_topicos/')===0 && file_exists(__DIR__.'/..'.'/'.$topico['arquivo_midia'])): ?>
-                            <img src="../<?= $topico['arquivo_midia'] ?>" style="max-width:100%">
-                        <?php else: ?>
-                            <div class="text-muted">Sem imagem</div>
+                    <div id="media_imagem" style="display:none;">
+                        <label class="form-label">Enviar imagem</label>
+                        <input type="file" name="arquivo_midia" accept="image/*" class="form-control">
+                        <?php if (!empty($topico['arquivo_midia']) && $topico['tipo_midia'] == 'imagem'): ?>
+                            <img src="<?= htmlspecialchars($topico['arquivo_midia']) ?>"
+                                style="max-width:100%; margin-top:10px;">
                         <?php endif; ?>
-
-                        <div class="mt-2">
-                            <label class="form-label">Substituir imagem</label>
-                            <input type="file" name="arquivo_midia" accept="image/*" class="form-control">
-                        </div>
+                        <div id="preview_edit_topico_img"></div>
                     </div>
 
-                    <div id="div_video" style="display:none;">
-                        <label class="form-label">Vídeo atual</label><br>
-                        <?php if ($topico['arquivo_midia'] && strpos($topico['arquivo_midia'],'imagens/videos/')===0 && file_exists(__DIR__.'/..'.'/'.$topico['arquivo_midia'])): ?>
-                            <video controls style="width:100%" src="../<?= $topico['arquivo_midia'] ?>"></video>
-                        <?php else: ?>
-                            <div class="text-muted">Sem vídeo vinculado</div>
+                    <div id="media_video" style="display:none;">
+                        <label class="form-label">Selecionar vídeo existente</label>
+                        <select name="video_existente" class="form-select mb-2">
+                            <option value="">-- escolher --</option>
+                            <?php foreach ($videosLista as $v): ?>
+                                <option value="<?= htmlspecialchars($v['video']) ?>"
+                                    <?= $topico['arquivo_midia'] == $v['video'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($v['titulo_video']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <div class="mb-2">ou envie novo vídeo</div>
+                        <input type="file" name="video_upload" accept="video/*" class="form-control">
+                        <input type="text" name="titulo_video_novo" class="form-control mt-2"
+                            placeholder="Título para novo vídeo">
+                        <?php if (!empty($topico['arquivo_midia']) && $topico['tipo_midia'] == 'video'): ?>
+                            <video src="<?= htmlspecialchars($topico['arquivo_midia']) ?>" controls
+                                style="max-width:100%; margin-top:10px;"></video>
                         <?php endif; ?>
-
-                        <div class="mt-2">
-                            <label class="form-label">Selecionar vídeo existente</label>
-                            <select name="video_existente" class="form-select mb-2">
-                                <option value="">-- escolher --</option>
-                                <?php foreach ($videosLista as $vv): ?>
-                                    <option value="<?= htmlspecialchars($vv['video']) ?>" <?= $topico['arquivo_midia']==$vv['video']? 'selected':'' ?>><?= htmlspecialchars($vv['titulo_video']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-
-                            <div class="mb-2">ou enviar novo vídeo</div>
-                            <input type="file" name="video_upload" accept="video/*" class="form-control">
-                            <div class="mb-2 mt-2">
-                                <label class="form-label">Título para novo vídeo (opcional)</label>
-                                <input type="text" name="titulo_video_novo" class="form-control">
-                            </div>
-                        </div>
+                        <div id="preview_edit_topico_vid"></div>
                     </div>
 
-                    <div class="form-check mt-3">
+                    <div class="form-check mt-2">
                         <input type="checkbox" name="remover_midia" value="1" class="form-check-input" id="remover_midia">
                         <label class="form-check-label" for="remover_midia">Remover mídia atual</label>
                     </div>
                 </div>
             </div>
 
-            <button class="btn btn-primary mt-3">Salvar</button>
+            <button class="btn btn-primary mt-3">Atualizar Tópico</button>
         </form>
     <?php else: ?>
         <div class="alert alert-warning">Tópico não encontrado.</div>
@@ -219,20 +203,42 @@ $videosLista = $vObj->listarAtivos();
 
 <script>
     const tipo = document.getElementById('tipo_midia');
-    const divImg = document.getElementById('div_imagem');
-    const divVid = document.getElementById('div_video');
-
-    function toggle() {
-        if (tipo.value === 'imagem') {
-            divImg.style.display = 'block'; divVid.style.display = 'none';
-        } else if (tipo.value === 'video') {
-            divImg.style.display = 'none'; divVid.style.display = 'block';
-        } else {
-            divImg.style.display = 'none'; divVid.style.display = 'none';
-        }
+    const imgDiv = document.getElementById('media_imagem');
+    const vidDiv = document.getElementById('media_video');
+    function toggleMedia() {
+        if (tipo.value === 'imagem') { imgDiv.style.display = 'block'; vidDiv.style.display = 'none'; }
+        else if (tipo.value === 'video') { imgDiv.style.display = 'none'; vidDiv.style.display = 'block'; }
+        else { imgDiv.style.display = 'none'; vidDiv.style.display = 'none'; }
     }
-    tipo.addEventListener('change', toggle);
-    toggle();
+    tipo.addEventListener('change', toggleMedia);
+    toggleMedia();
+
+    document.addEventListener('DOMContentLoaded', function () {
+        function previewFile(input, previewId) {
+            const container = document.getElementById(previewId);
+            container.innerHTML = '';
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                    const img = document.createElement('img');
+                    img.style.maxWidth = '100%';
+                    img.src = URL.createObjectURL(file);
+                    container.appendChild(img);
+                } else if (['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'].includes(ext)) {
+                    const video = document.createElement('video');
+                    video.style.maxWidth = '100%';
+                    video.controls = true;
+                    video.src = URL.createObjectURL(file);
+                    container.appendChild(video);
+                }
+            }
+        }
+        const inputImg = document.querySelector('input[name="arquivo_midia"]');
+        if (inputImg) inputImg.addEventListener('change', function () { previewFile(this, 'preview_edit_topico_img'); });
+        const inputVid = document.querySelector('input[name="video_upload"]');
+        if (inputVid) inputVid.addEventListener('change', function () { previewFile(this, 'preview_edit_topico_vid'); });
+    });
 </script>
 
 <?php include __DIR__ . '/../dashboard/_footer.php'; ?>

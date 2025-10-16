@@ -12,8 +12,10 @@ $dirVideos = __DIR__ . '/../imagens/videos/';
 $webTopicos = 'imagens/img_topicos/';
 $webVideos = 'imagens/videos/';
 
-if (!is_dir($dirTopicos)) mkdir($dirTopicos, 0755, true);
-if (!is_dir($dirVideos)) mkdir($dirVideos, 0755, true);
+if (!is_dir($dirTopicos))
+    mkdir($dirTopicos, 0755, true);
+if (!is_dir($dirVideos))
+    mkdir($dirVideos, 0755, true);
 
 $t = new Topicos();
 $videosObj = new Videos();
@@ -27,7 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $t->setLado($_POST['lado'] ?? 'direita');
         $t->setAtivo(isset($_POST['ativo']) ? 1 : 0);
 
-        // Se escolheu tipo imagem
         if ($_POST['tipo_midia'] === 'imagem') {
             if (!empty($_FILES['arquivo_midia']['name'])) {
                 $ext = pathinfo($_FILES['arquivo_midia']['name'], PATHINFO_EXTENSION);
@@ -37,15 +38,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } elseif ($_POST['tipo_midia'] === 'video') {
-            // selecionar vídeo já cadastrado (select) ou enviar novo
             if (!empty($_POST['video_existente'])) {
                 $t->setArquivoMidia($_POST['video_existente']);
             } elseif (!empty($_FILES['video_upload']['name'])) {
-                // enviar novo vídeo para pasta imagens/videos
                 $ext = pathinfo($_FILES['video_upload']['name'], PATHINFO_EXTENSION);
                 $novo = 'video_' . time() . '.' . $ext;
                 if (move_uploaded_file($_FILES['video_upload']['tmp_name'], $dirVideos . $novo)) {
-                    // cadastrar registro em videos
                     $v = new Videos();
                     $v->setTituloVideo($_POST['titulo_video_novo'] ?? 'Vídeo tópico');
                     $v->setVideo($webVideos . $novo);
@@ -59,7 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $t->setTipoMidia($_POST['tipo_midia'] ?? 'nenhum');
-
         $t->inserir();
         $mensagem = "<div class='alert alert-success'>Tópico cadastrado com sucesso.</div>";
     } catch (Exception $e) {
@@ -67,8 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// carregar lista de vídeos para seleção
-$videosLista = (new Videos())->listarAtivos();
+$videosLista = $videosObj->listarAtivos();
 ?>
 
 <?php include __DIR__ . '/../dashboard/_header.php'; ?>
@@ -136,7 +132,8 @@ $videosLista = (new Videos())->listarAtivos();
                     <select name="video_existente" class="form-select mb-2">
                         <option value="">-- escolher --</option>
                         <?php foreach ($videosLista as $vv): ?>
-                            <option value="<?= htmlspecialchars($vv['video']) ?>"><?= htmlspecialchars($vv['titulo_video']) ?></option>
+                            <option value="<?= htmlspecialchars($vv['video']) ?>">
+                                <?= htmlspecialchars($vv['titulo_video']) ?></option>
                         <?php endforeach; ?>
                     </select>
 
@@ -177,6 +174,43 @@ $videosLista = (new Videos())->listarAtivos();
     }
     tipo.addEventListener('change', toggleMedia);
     toggleMedia();
+
+    // PREVIEW
+    document.addEventListener('DOMContentLoaded', function () {
+        function previewFile(input, previewId) {
+            const container = document.getElementById(previewId) || (() => {
+                const div = document.createElement('div');
+                div.id = previewId;
+                input.parentNode.appendChild(div);
+                return div;
+            })();
+            container.innerHTML = '';
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                    const img = document.createElement('img');
+                    img.style.maxWidth = '100%';
+                    img.style.marginTop = '10px';
+                    img.src = URL.createObjectURL(file);
+                    container.appendChild(img);
+                } else if (['mp4', 'webm', 'ogg', 'mov', 'mkv', 'avi'].includes(ext)) {
+                    const video = document.createElement('video');
+                    video.style.maxWidth = '100%';
+                    video.style.marginTop = '10px';
+                    video.controls = true;
+                    video.src = URL.createObjectURL(file);
+                    container.appendChild(video);
+                }
+            }
+        }
+
+        const inputImg = document.querySelector('input[name="arquivo_midia"]');
+        if (inputImg) inputImg.addEventListener('change', function () { previewFile(this, 'preview_cad_topico_img'); });
+
+        const inputVid = document.querySelector('input[name="video_upload"]');
+        if (inputVid) inputVid.addEventListener('change', function () { previewFile(this, 'preview_cad_topico_vid'); });
+    });
 </script>
 
 <?php include __DIR__ . '/../dashboard/_footer.php'; ?>
