@@ -116,7 +116,7 @@ if (!empty($_SESSION['admin']['id'])) {
                     <li class="nav-item"><a href="../dashboard/dashboard.php" class="nav-link">Início</a></li>
                     <li class="nav-item"><a href="../agenda/exibe_agenda.php" class="nav-link">Agenda</a></li>
                     <li class="nav-item"><a href="../integrantes/exibe_integrante.php" class="nav-link">Integrantes</a>
-                    <li class="nav-item"><a href="contato.php" class="nav-link">Contato</a></li>
+                    <li class="nav-item"><a href="../carrossel/exibe_carrossel.php" class="nav-link">Carrossel</a></li>
                     <li class="nav-item"><a href="../video/exibe_videos.php" class="nav-link">Vídeos</a></li>
                     <li class="nav-item"><a href="../topicos/exibe_topicos.php" class="nav-link">Tópicos</a></li>
                     </li>

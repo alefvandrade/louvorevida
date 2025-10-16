@@ -2,12 +2,22 @@
 Site pra mosstrar o vocal louvor e vida
 
 config.ini:
-[database]
-host = localhost
-user = root
-password =
-dbname = vocal_vida
-charset = utf8mb4
+[local]
+host = "127.0.0.1"
+username = "root"
+password = ""
+dbname = "vocal_vida"
+port = 3306
+charset = "utf8mb4"
+
+[infinity]
+host = "infinity_servidor"
+username = "usuario_remoto"
+password = "senha_remota"
+dbname = "nome_remoto"
+port = 3306
+charset = "utf8mb4"
+
 
 🎵 Louvor e Vida — Sistema Administrativo
 📘 Sumário

@@ -250,3 +250,15 @@ WHERE ativo = 1 AND exibir_no_index = 1
 ORDER BY id DESC;
 
 COMMIT;
+
+CREATE TABLE `agenda` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `titulo` VARCHAR(255) NOT NULL,
+    `descricao` TEXT,
+    `local` VARCHAR(255),
+    `dia` DATE NOT NULL,
+    `hora` TIME,
+    `ativo` TINYINT(1) NOT NULL DEFAULT 1,
+    `ordem` INT UNSIGNED DEFAULT 0,
+    PRIMARY KEY (`id`)
+) ;
