@@ -119,6 +119,7 @@ if (!empty($_SESSION['admin']['id'])) {
                     <li class="nav-item"><a href="../carrossel/exibe_carrossel.php" class="nav-link">Carrossel</a></li>
                     <li class="nav-item"><a href="../video/exibe_videos.php" class="nav-link">Vídeos</a></li>
                     <li class="nav-item"><a href="../topicos/exibe_topicos.php" class="nav-link">Tópicos</a></li>
+                    <li class="nav-item"><a href="../rodape/exibe_rodape.php" class="nav-link">Rodapé</a></li>
                     </li>
                 </ul>
 
